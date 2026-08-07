@@ -109,6 +109,13 @@ ul{list-style:none}
 .field input:focus,.field textarea:focus{border-color:var(--lime)}
 .field textarea{min-height:110px;resize:vertical}
 .btn.full{width:100%;justify-content:center}
+.wa-btn{display:flex;align-items:center;justify-content:center;gap:9px;margin-top:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:12px 20px;color:var(--paper);font-weight:700;font-size:14px;transition:background .2s,transform .2s}
+.wa-btn:hover{background:#25D366;color:var(--ink);border-color:#25D366;transform:translateY(-2px)}
+.form-status{min-height:18px}
+.form-status.ok{color:#A7C957;font-weight:600}
+.form-status.err{color:#FF7A7A;font-weight:600}
+.form-status.sending{color:#B8C6BD;font-style:italic}
+.wa-btn[disabled]{opacity:.6;pointer-events:none}
 
 /* ---------- Footer ---------- */
 footer{padding:36px 0 40px;border-top:1px solid var(--line);margin-top:40px}

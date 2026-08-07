@@ -42,16 +42,44 @@
     if (e.target.closest('.protect')) e.preventDefault();
   });
 
-  // Contact form -> mailto (no backend needed; replace address when ready)
+  // Contact form -> FormSubmit (AJAX, no backend needed)
   var form = document.querySelector('#contact-form');
   if (form) {
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      var name = form.querySelector('[name="name"]').value.trim();
-      var msg = form.querySelector('[name="message"]').value.trim();
-      var subject = 'Portfolio inquiry' + (name ? ' from ' + name : '');
-      var body = encodeURIComponent(msg + '\n\n— ' + name);
-      window.location.href = 'mailto:hello@youremail.com?subject=' + encodeURIComponent(subject) + '&body=' + body;
+      var btn = form.querySelector('button[type="submit"]');
+      var status = form.querySelector('.form-status');
+      var data = new FormData(form);
+      data.set('_subject', '[Portfolio] New inquiry');
+      data.set('_captcha', 'false');
+      data.set('_template', 'table');
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+      status.className = 'form-status sending';
+      status.textContent = 'Sending your message…';
+      fetch(form.action, { method: 'POST', body: data, headers: { 'Accept': 'application/json' } })
+        .then(function (res) { return res.json(); })
+        .then(function (json) {
+          if (json.success === 'true' || json.success === true) {
+            status.className = 'form-status ok';
+            status.textContent = 'Thank you! Your message was sent — I will reply soon.';
+            form.reset();
+          } else if (json.success === 'false') {
+            status.className = 'form-status err';
+            status.textContent = 'Email activation needed first — check your inbox for the confirmation link.';
+          } else {
+            status.className = 'form-status err';
+            status.textContent = 'Could not send. Please try again or message me on WhatsApp.';
+          }
+        })
+        .catch(function () {
+          status.className = 'form-status err';
+          status.textContent = 'Could not send. Please try again or message me on WhatsApp.';
+        })
+        .finally(function () {
+          btn.disabled = false;
+          btn.textContent = 'Send inquiry →';
+        });
     });
   }
 

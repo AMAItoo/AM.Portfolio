@@ -1,0 +1,77 @@
+:root{
+  --navy:#1B3A5C; --navy2:#2C5A8F; --green:#2E7D32; --orange:#E65100;
+  --bg:#F4F6FA; --card:#FFFFFF; --line:#E3E9F2; --text:#243142; --muted:#6B7A90;
+  --radius:14px; --shadow:0 2px 10px rgba(27,58,92,.06);
+}
+*{box-sizing:border-box; margin:0; padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Segoe UI','Tahoma','Noto Kufi Arabic','Arial',sans-serif;
+  background:var(--bg); color:var(--text); line-height:1.6;
+}
+.top{background:linear-gradient(120deg,var(--navy) 0%,var(--navy2) 100%); color:#fff; padding:22px 0}
+.top-inner{max-width:1240px; margin:0 auto; padding:0 20px; display:flex; align-items:center; justify-content:space-between; gap:16px}
+.brand{display:flex; align-items:center; gap:14px}
+.logo{width:46px; height:46px; border-radius:12px; background:#fff; color:var(--navy); font-weight:800; font-size:26px; display:flex; align-items:center; justify-content:center}
+.top h1{font-size:22px; font-weight:800}
+.sub{font-size:13px; opacity:.85}
+.live{display:flex; align-items:center; gap:8px; font-size:13px; background:rgba(255,255,255,.12); padding:8px 14px; border-radius:999px}
+.dot{width:9px; height:9px; border-radius:50%; background:#6FCF97; box-shadow:0 0 0 4px rgba(111,207,151,.25)}
+
+.wrap{max-width:1240px; margin:0 auto; padding:22px 20px 40px}
+
+.kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:18px}
+.kpi{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px 20px; border-top:4px solid var(--navy)}
+.kpi:nth-child(2){border-top-color:var(--green)}
+.kpi:nth-child(3){border-top-color:var(--orange)}
+.kpi:nth-child(4){border-top-color:#6A4FA3}
+.kpi .k-label{font-size:13px; color:var(--muted); font-weight:600}
+.kpi .k-value{font-size:26px; font-weight:800; color:var(--navy); margin-top:2px; direction:ltr; text-align:right; font-variant-numeric:tabular-nums}
+.kpi .k-note{font-size:12px; color:var(--muted)}
+
+.panel{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:14px 18px; margin-bottom:18px}
+.filters{display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center}
+.fgroup{display:flex; flex-direction:column; gap:3px}
+.fgroup label{font-size:11px; font-weight:700; color:var(--muted)}
+.fgroup select{
+  font-family:inherit; font-size:13px; padding:7px 10px; border:1px solid var(--line);
+  border-radius:9px; background:#fff; color:var(--text); min-width:140px; cursor:pointer;
+}
+.fgroup select:focus{outline:2px solid var(--navy2); border-color:transparent}
+.btn-reset{
+  font-family:inherit; font-size:13px; font-weight:700; color:var(--orange); background:#FDEBE2;
+  border:none; padding:8px 16px; border-radius:9px; cursor:pointer; margin-inline-start:auto;
+}
+.btn-reset:hover{background:#FAD7C7}
+
+.active-row{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; min-height:0}
+.chip{
+  display:inline-flex; align-items:center; gap:6px; font-size:12px; background:var(--navy);
+  color:#fff; padding:5px 8px 5px 12px; border-radius:999px;
+}
+.chip b{font-weight:700}
+.chip .x{background:rgba(255,255,255,.2); border:none; color:#fff; width:18px; height:18px; border-radius:50%; cursor:pointer; font-size:12px; line-height:1}
+.chip .x:hover{background:var(--orange)}
+
+.grid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px}
+.card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px 18px; border:1px solid var(--line)}
+.card.span2{grid-column:span 2}
+.card h3{font-size:14px; color:var(--muted); font-weight:700; margin-bottom:8px; padding-inline-start:10px; border-inline-start:4px solid var(--navy)}
+.card .chart{width:100%; height:270px}
+#c-trend .chart{height:290px}
+.card.hot{border-color:var(--orange)}
+
+.foot{text-align:center; color:var(--muted); font-size:12px; padding:0 20px 36px}
+
+@media (max-width:900px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .card.span2{grid-column:span 2}
+}
+@media (max-width:560px){
+  .kpis{grid-template-columns:1fr 1fr; gap:10px}
+  .grid{grid-template-columns:1fr}
+  .card.span2{grid-column:span 1}
+  .top h1{font-size:18px}
+  .kpi .k-value{font-size:20px}
+}

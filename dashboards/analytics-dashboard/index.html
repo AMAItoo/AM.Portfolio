@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تحليل مبيعات Adidas — Dashboard تفاعلي</title>
+<meta name="description" content="لوحة تحليل تفاعلية لبيانات مبيعات Adidas في الولايات المتحدة 2020-2021: مؤشرات، اتجاهات، ومقارنات قطاعية.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <div class="logo">A</div>
+      <div>
+        <h1>لوحة تحليل مبيعات Adidas</h1>
+        <p class="sub">الولايات المتحدة — 2020 إلى 2021 | 9,644 معاملة</p>
+      </div>
+    </div>
+    <div class="live"><span class="dot"></span> تفاعلي</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="kpis" id="kpis"></section>
+
+  <section class="panel">
+    <div class="filters" id="filters"></div>
+    <div class="active-row" id="activeRow"></div>
+  </section>
+
+  <section class="grid">
+    <div class="card span2" data-dim="Month" id="c-trend">
+      <h3>الاتجاه الشهري للمبيعات والربح</h3><div class="chart" id="ch-trend"></div>
+    </div>
+    <div class="card" data-dim="Region" id="c-region">
+      <h3>المبيعات حسب المنطقة</h3><div class="chart" id="ch-region"></div>
+    </div>
+    <div class="card" data-dim="Retailer" id="c-retailer">
+      <h3>المبيعات حسب المتجر</h3><div class="chart" id="ch-retailer"></div>
+    </div>
+    <div class="card" data-dim="Product" id="c-product">
+      <h3>المبيعات حسب المنتج</h3><div class="chart" id="ch-product"></div>
+    </div>
+    <div class="card" data-dim="Method" id="c-method">
+      <h3>حسب قناة البيع</h3><div class="chart" id="ch-method"></div>
+    </div>
+    <div class="card span2" data-dim="State" id="c-state">
+      <h3>أفضل 10 ولايات</h3><div class="chart" id="ch-state"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">أُعدّت هذه اللوحة من بيانات Adidas US Sales — اضغط على أي شريحة/عمود للتصفية، واضغط مجددًا لإلغائها.</footer>
+
+<script src="assets/echarts.min.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
