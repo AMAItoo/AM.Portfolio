@@ -2,6 +2,8 @@
 (function () {
   'use strict';
 
+  var isArabic = document.documentElement.dir === 'rtl' || document.documentElement.lang === 'ar';
+
   // Mobile nav toggle
   var toggle = document.querySelector('.nav-toggle');
   var links = document.querySelector('.nav-links');
@@ -54,31 +56,31 @@
       data.set('_captcha', 'false');
       data.set('_template', 'table');
       btn.disabled = true;
-      btn.textContent = 'Sending…';
+      btn.textContent = isArabic ? 'جاري الإرسال…' : 'Sending…';
       status.className = 'form-status sending';
-      status.textContent = 'Sending your message…';
+      status.textContent = isArabic ? 'جاري إرسال رسالتك…' : 'Sending your message…';
       fetch(form.action, { method: 'POST', body: data, headers: { 'Accept': 'application/json' } })
         .then(function (res) { return res.json(); })
         .then(function (json) {
           if (json.success === 'true' || json.success === true) {
             status.className = 'form-status ok';
-            status.textContent = 'Thank you! Your message was sent — I will reply soon.';
+            status.textContent = isArabic ? 'شكراً! تم إرسال رسالتك — سأرد عليك قريباً.' : 'Thank you! Your message was sent — I will reply soon.';
             form.reset();
           } else if (json.success === 'false') {
             status.className = 'form-status err';
-            status.textContent = 'Email activation needed first — check your inbox for the confirmation link.';
+            status.textContent = isArabic ? 'يحتاج تفعيل البريد — تحقق من صندوق الوارد.' : 'Email activation needed first — check your inbox for the confirmation link.';
           } else {
             status.className = 'form-status err';
-            status.textContent = 'Could not send. Please try again or message me on WhatsApp.';
+            status.textContent = isArabic ? 'تعذر الإرسال. حاول مرة أخرى أو أرسل رسالة واتساب.' : 'Could not send. Please try again or message me on WhatsApp.';
           }
         })
         .catch(function () {
           status.className = 'form-status err';
-          status.textContent = 'Could not send. Please try again or message me on WhatsApp.';
+          status.textContent = isArabic ? 'تعذر الإرسال. حاول مرة أخرى أو أرسل رسالة واتساب.' : 'Could not send. Please try again or message me on WhatsApp.';
         })
         .finally(function () {
           btn.disabled = false;
-          btn.textContent = 'Send inquiry →';
+          btn.textContent = isArabic ? 'إرسال الاستفسار ←' : 'Send inquiry →';
         });
     });
   }
