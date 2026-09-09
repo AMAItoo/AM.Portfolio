@@ -47,17 +47,22 @@ def answer_groq(messages: list[dict]) -> str:
 
 
 def answer_gemini(messages: list[dict]) -> str:
-    from google import genai  # lazy import
+    import httpx
 
-    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-    system = [m["content"] for m in messages if m["role"] == "system"]
-    user = [m["content"] for m in messages if m["role"] == "user"]
-    resp = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents="\n".join(user),
-        config={"system_instruction": "\n\n".join(system)},
-    )
-    return (resp.text or "").strip()
+    model = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    payload = {
+        "system_instruction": {"parts": [{"text": "\n\n".join(
+            m["content"] for m in messages if m["role"] == "system")}]},
+        "contents": [{"role": "user", "parts": [{"text": "\n".join(
+            m["content"] for m in messages if m["role"] == "user")}]}],
+    }
+    headers = {"x-goog-api-key": os.environ["GEMINI_API_KEY"]}
+    resp = httpx.post(url, json=payload, headers=headers, timeout=30)
+    resp.raise_for_status()
+    data = resp.json()
+    candidates = data.get("candidates") or []
+    return (candidates[0]["content"]["parts"][0].get("text") or "").strip()
 
 
 def answer(query: str, context_chunks: list[str], lang: str) -> str:
