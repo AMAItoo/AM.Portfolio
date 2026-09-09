@@ -1,0 +1,208 @@
+/* Portfolio chatbot widget — matches site design tokens (style.css). */
+@font-face { font-family:'Poppins'; font-style:normal; font-weight:400; src:url('../../assets/fonts/poppins-400.woff2') format('woff2'); }
+@font-face { font-family:'Poppins'; font-style:normal; font-weight:700; src:url('../../assets/fonts/poppins-700.woff2') format('woff2'); }
+@font-face { font-family:'Cairo'; font-style:normal; font-weight:400; src:url('../../assets/fonts/Cairo-Regular.ttf') format('truetype'); }
+@font-face { font-family:'Cairo'; font-style:normal; font-weight:700; src:url('../../assets/fonts/Cairo-Bold.ttf') format('truetype'); }
+
+/* Floating launcher button — bottom-right in RTL, bottom-left in LTR. */
+.pf-chat-fab {
+  position: fixed;
+  bottom: 22px;
+  left: 22px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--accent, #0E7C5A);
+  color: #fff;
+  border: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 24px rgba(18, 35, 27, .28);
+  z-index: 9990;
+  transition: transform .2s, box-shadow .2s;
+}
+.pf-chat-fab:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(18, 35, 27, .34); }
+.pf-chat-fab svg { width: 26px; height: 26px; fill: #fff; }
+
+/* RTL mirroring */
+[dir="rtl"] .pf-chat-fab { left: auto; right: 22px; }
+[dir="ltr"] .pf-chat-fab { left: 22px; right: auto; }
+
+/* Panel */
+.pf-chat-panel {
+  position: fixed;
+  bottom: 90px;
+  left: 22px;
+  width: 380px;
+  max-width: calc(100vw - 44px);
+  height: 540px;
+  max-height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+  background: var(--card, #FFFFFF);
+  border: 1px solid var(--line, #E4DED2);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(18, 35, 27, .25);
+  z-index: 9991;
+  font-family: var(--font-en, 'Poppins', sans-serif);
+}
+[dir="rtl"] .pf-chat-panel { left: auto; right: 22px; }
+[dir="rtl"] .pf-chat-panel { font-family: var(--font-ar, 'Cairo', 'Poppins', sans-serif); }
+
+.pf-chat-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--ink, #12231B);
+  color: var(--paper, #F7F4EE);
+}
+.pf-chat-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--lime, #A7C957);
+  color: var(--ink, #12231B);
+  display: grid; place-items: center;
+  font-weight: 700; font-size: 17px;
+  flex-shrink: 0;
+}
+.pf-chat-title { font-size: 14px; font-weight: 700; line-height: 1.25; }
+.pf-chat-sub { font-size: 11.5px; opacity: .85; }
+.pf-chat-close { margin-left: auto; background: none; border: 0; color: inherit; font-size: 20px; cursor: pointer; line-height: 1; }
+[dir="rtl"] .pf-chat-close { margin-left: 0; margin-right: auto; }
+
+/* Messages area */
+.pf-chat-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--paper, #F7F4EE);
+}
+.pf-msg {
+  max-width: 82%;
+  padding: 10px 13px;
+  border-radius: 14px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.pf-msg.bot {
+  align-self: flex-start;
+  background: #fff;
+  color: var(--ink, #12231B);
+  border: 1px solid var(--line, #E4DED2);
+  border-bottom-left-radius: 4px;
+}
+.pf-msg.user {
+  align-self: flex-end;
+  background: var(--accent, #0E7C5A);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+[dir="rtl"] .pf-msg.bot { border-bottom-left-radius: 14px; border-bottom-right-radius: 4px; }
+[dir="rtl"] .pf-msg.user { border-bottom-right-radius: 14px; border-bottom-left-radius: 4px; }
+
+/* Typing indicator */
+.pf-typing { display: inline-flex; align-items: center; gap: 4px; padding: 12px 14px; }
+.pf-typing i { width: 7px; height: 7px; border-radius: 50%; background: #9aa; animation: pf-blink 1.2s infinite; }
+.pf-typing i:nth-child(2) { animation-delay: .2s; }
+.pf-typing i:nth-child(3) { animation-delay: .4s; }
+@keyframes pf-blink { 0%,80%,100% { opacity: .25; } 40% { opacity: 1; } }
+
+/* Quick replies */
+.pf-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 4px 2px;
+}
+.pf-quick button {
+  background: #fff;
+  color: var(--accent, #0E7C5A);
+  border: 1.5px solid var(--accent, #0E7C5A);
+  border-radius: 999px;
+  padding: 7px 13px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.pf-quick button:hover { background: var(--accent, #0E7C5A); color: #fff; }
+
+/* WhatsApp handoff button */
+.pf-wa {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #25D366;
+  color: #fff;
+  border-radius: 999px;
+  border: 0;
+  padding: 11px 16px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+.pf-wa svg { width: 18px; height: 18px; fill: #fff; }
+.pf-wa:hover { filter: brightness(1.06); }
+
+/* Input bar */
+.pf-chat-input {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line, #E4DED2);
+  background: #fff;
+}
+.pf-chat-input input {
+  flex: 1;
+  border: 1.5px solid var(--line, #E4DED2);
+  border-radius: 999px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--paper, #F7F4EE);
+}
+.pf-chat-input input:focus { outline: none; border-color: var(--accent, #0E7C5A); }
+.pf-chat-input button {
+  background: var(--ink, #12231B);
+  color: var(--lime, #A7C957);
+  border: 0;
+  border-radius: 50%;
+  width: 40px; height: 40px;
+  cursor: pointer;
+  display: grid; place-items: center;
+}
+.pf-chat-input button svg { width: 18px; height: 18px; }
+
+/* Under 420px: full-width bottom sheet */
+@media (max-width: 420px) {
+  .pf-chat-panel { left: 10px; right: 10px; width: auto; max-width: none; bottom: 84px; height: 80vh; }
+  .pf-chat-fab { bottom: 16px; left: 16px; }
+  [dir="rtl"] .pf-chat-fab { left: auto; right: 16px; }
+}
+
+/* Unread badge */
+.pf-chat-unread {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: #e74c3c;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  padding: 0 4px;
+}
+[dir="rtl"] .pf-chat-unread { right: auto; left: -3px; }
