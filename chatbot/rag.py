@@ -7,10 +7,13 @@ _model = None
 
 
 def _get_model():
-    """Lazy-load the multilingual embedding model."""
+    """Lazy-load the multilingual embedding model (CPU-pinned: ZeroGPU-safe)."""
     global _model
     if _model is None:
-        _model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+        _model = SentenceTransformer(
+            "paraphrase-multilingual-MiniLM-L12-v2",
+            device="cpu",
+        )
     return _model
 
 
