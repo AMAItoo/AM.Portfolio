@@ -1,3 +1,7 @@
 .vercel
 .netlify
 .secrets/
+
+__pycache__/
+*.pyc
+chatbot/data/

@@ -12,6 +12,7 @@ Security:
 - Session TTL (2h) + hard turn cap (40) to bound abuse
 - Secrets only via env vars (GROQ_API_KEY / GEMINI_API_KEY)
 """
+import os
 import time
 from contextlib import asynccontextmanager
 from typing import Optional
@@ -33,9 +34,10 @@ from chatbot.security import (
 )
 
 ALLOWED_ORIGINS = ["https://amaitoo.github.io"]
-DEFAULT_KB_DIR = "knowledge"
-DEFAULT_PERSIST_DIR = "data/chroma_db"
-DEFAULT_LEADS_PATH = "data/leads.jsonl"
+_PKG_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_KB_DIR = os.path.join(_PKG_DIR, "knowledge")
+DEFAULT_PERSIST_DIR = os.path.join(_PKG_DIR, "data", "chroma_db")
+DEFAULT_LEADS_PATH = os.path.join(_PKG_DIR, "data", "leads.jsonl")
 
 
 class ChatRequest(BaseModel):
