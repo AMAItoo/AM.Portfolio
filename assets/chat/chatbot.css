@@ -153,6 +153,9 @@
 .pf-wa svg { width: 18px; height: 18px; fill: #fff; }
 .pf-wa:hover { filter: brightness(1.06); }
 
+/* Lead hint bubble (state = offer_whatsapp) */
+.pf-lead-hint { background: #FFF8E1; border-color: #E6C75A; }
+
 /* Input bar */
 .pf-chat-input {
   display: flex;

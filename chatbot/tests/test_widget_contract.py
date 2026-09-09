@@ -52,6 +52,12 @@ def test_whatsapp_link_built_client_side(js_source):
     assert re.search(r"encodeURIComponent", js_source)
 
 
+def test_lead_hint_on_offer_whatsapp(js_source, css_source):
+    assert "offer_whatsapp" in js_source
+    assert "pf-lead-hint" in js_source
+    assert "pf-lead-hint" in css_source
+
+
 def test_no_external_scripts(js_source):
     bad = [u for u in re.findall(r"https?://[^'\"\\s]+", js_source)
            if not u.startswith("https://wa.me/")]

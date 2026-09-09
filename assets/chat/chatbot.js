@@ -144,6 +144,10 @@
       });
       els.body.appendChild(box);
     }
+    if (reply.state === 'offer_whatsapp') {
+      var hint = el('div', 'pf-msg bot pf-lead-hint', localize('اقتراح: لو تفضل أرجّع لك أنا، اترك رقمك أو إيميلك في محادثتك.', 'Tip: if you prefer I contact you, leave your phone or email here.'));
+      els.body.appendChild(hint);
+    }
     if (reply.whatsapp && reply.whatsapp.link) {
       var a = document.createElement('a');
       a.className = 'pf-wa';
