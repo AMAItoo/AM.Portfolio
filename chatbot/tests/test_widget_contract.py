@@ -35,9 +35,10 @@ def test_has_init_config_block(js_source):
 
 def test_posts_to_chat_endpoint(js_source):
     assert re.search(r"fetch\s*\(", js_source)
-    assert re.search(r"['\"]/chat['\"]", js_source)
+    assert re.search(r"/gradio_api/call/chat", js_source)
     assert re.search(r"method\s*:\s*['\"]POST['\"]", js_source)
     assert re.search(r"JSON\.stringify", js_source)
+    assert re.search(r"event_id", js_source)
 
 
 def test_renders_quick_replies_as_buttons(js_source):

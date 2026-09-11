@@ -86,14 +86,25 @@ def match_service(text: str) -> str | None:
     """Return service key if the message selects a service; else None.
 
     Tries exact, directional, and normalized (Arabic-determiner-insensitive)
-    matching against every service name variant.
+    matching against every service name variant plus common aliases.
     """
     lowered = text.strip().lower()
     if not lowered:
         return None
 
+    aliases = {
+        "banner": ("banner", "ad design", "advertising", "ads", "social ads", "display ads", "baner", "بانرات", "بانر"),
+        "brand": ("brand", "logo", "identity", "هوية", "لوغو", "لوجو", "branding"),
+        "web": ("web", "website", "site", "frontend", "front-end", "fullstack", "full-stack", "development", "app", "موقع", "مواقع", "تطوير"),
+        "content": ("content", "copywriting", "copy", "writing", "blog", "محتوى"),
+        "video": ("video", "youtube", "editing", "motion", "فيديو", "يوتيوب"),
+        "seo": ("seo", "search engine", "performance", "optimization", "سرعة", "تهيئة"),
+        "research": ("research", "data", "analysis", "بانر"),
+    }
+
     for key, s in SERVICES.items():
-        for variant in (s["ar"], s["en"], s["ar_short"], s["en_short"]):
+        variants = (s["ar"], s["en"], s["ar_short"], s["en_short"], *aliases[key])
+        for variant in variants:
             v = variant.lower()
             if v in lowered or lowered in v:
                 return key

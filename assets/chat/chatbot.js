@@ -32,23 +32,48 @@
   }
 
   function api(sessionMsg, cb) {
+    var offline = { messages: [localize('عذراً، البوت غير متصل الآن.', 'Sorry, the assistant is offline right now.')], quick_replies: [], whatsapp: null, state: {} };
+    var err = { messages: [localize('حدث خطأ — جرّب مرة أخرى أو تواصل واتساب.', 'Something went wrong — try again or reach me on WhatsApp.')], quick_replies: [], whatsapp: null, state: {} };
     if (!config.apiUrl) {
-      if (cb) cb({ messages: [localize('عذراً، البوت غير متصل الآن.', 'Sorry, the assistant is offline right now.')], quick_replies: [], whatsapp: null, state: '' });
+      if (cb) cb(offline);
       return;
     }
-    var url = config.apiUrl + (config.apiUrl.slice(-5) === '/chat' ? '' : '/chat');
-    fetch(url, {
+    var base = config.apiUrl.replace(/\/+$/, '');
+    var data = [config.lang, sessionId, sessionMsg];
+    fetch(base + '/gradio_api/call/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: sessionId, message: sessionMsg, page_lang: config.lang })
+      body: JSON.stringify({ data: data })
     })
       .then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       })
-      .then(cb)
+      .then(function (ev) {
+        return fetch(base + '/gradio_api/call/chat/' + encodeURIComponent(ev.event_id), {
+          headers: { 'Accept': 'text/event-stream' }
+        });
+      })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+      })
+      .then(function (body) {
+        var reply = null;
+        var lines = body.split('\n');
+        for (var i = lines.length - 1; i >= 0; i--) {
+          if (lines[i].indexOf('data:') !== 0) continue;
+          try {
+            reply = JSON.parse(lines[i].slice(5).trim());
+            break;
+          } catch (e) { /* keep scanning */ }
+        }
+        if (!reply) throw new Error('no payload');
+        if (Array.isArray(reply) && reply.length === 1) reply = reply[0];
+        if (cb) cb(reply);
+      })
       .catch(function () {
-        if (cb) cb({ messages: [localize('حدث خطأ — جرّب مرة أخرى أو تواصل واتساب.', 'Something went wrong — try again or reach me on WhatsApp.')], quick_replies: [], whatsapp: null, state: '' });
+        if (cb) cb(err);
       });
   }
 
@@ -110,7 +135,7 @@
     els.wrapper.style.visibility = open ? 'visible' : 'hidden';
     els.fab.querySelector('.pf-chat-unread').style.display = 'none';
     unread = 0;
-    if (open && els.body.children.length === 0) {
+if (open && els.body.children.length === 0) {
       addTyping();
       api('start', function (reply) {
         removeTyping();
