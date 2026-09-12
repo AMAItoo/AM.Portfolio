@@ -32,12 +32,14 @@
   }
 
   /* Render a bot message, converting [label](url) markdown links into
-     clickable <a> anchors and `code` into styled spans. Plain text nodes
-     keep everything XSS-safe. */
+     clickable <a> anchors and `code` into styled spans. Also turns bare
+     relative paths (e.g. projects/foo.html) into links so the LLM's plain
+     URLs work too. Plain text nodes keep everything XSS-safe. */
   function renderMessage(text) {
     var holder = el('div', 'pf-msg bot');
     if (!text) return holder;
     var linkRe = /\[([^\]]+)\]\((https?:\/\/[^\s)]+|[^)\s]+)\)/g;
+    var bareRe = /((?:\.\.?\/)?[A-Za-z0-9_\-]+(?:\/[A-Za-z0-9_\-\.]+)+\.(?:html|htm|pdf|md)(?:[?#][^\s]*)?)/g;
     var codeRe = /`([^`]+)`/g;
     var cursor = 0;
     var m;
@@ -58,18 +60,36 @@
     function emit(part, final) {
       if (!part) return;
       codeRe.lastIndex = 0;
+      bareRe.lastIndex = 0;
       var i = 0;
       var cm;
       while ((cm = codeRe.exec(part)) !== null) {
-        if (cm.index > i) holder.appendChild(el('span', '', part.slice(i, cm.index)));
+        if (cm.index > i) emitBare(part.slice(i, cm.index));
         holder.appendChild(el('code', '', cm[1]));
         i = cm.index + cm[0].length;
       }
-      if (final && i === 0) {
+      if (i < part.length) emitBare(part.slice(i));
+      if (final && i === 0 && !/[\w]/.test(part)) {
         holder.appendChild(el('span', '', part));
-      } else if (i < part.length) {
-        holder.appendChild(el('span', '', part.slice(i)));
       }
+    }
+
+    function emitBare(part) {
+      if (!part) return;
+      var i = 0;
+      var bm;
+      while ((bm = bareRe.exec(part)) !== null) {
+        if (bm.index > i) holder.appendChild(el('span', '', part.slice(i, bm.index)));
+        var b = document.createElement('a');
+        b.className = 'pf-inline-link';
+        b.textContent = bm[1];
+        b.href = resolveLink(bm[1]);
+        b.target = '_self';
+        b.rel = 'noopener noreferrer';
+        holder.appendChild(b);
+        i = bm.index + bm[0].length;
+      }
+      if (i < part.length) holder.appendChild(el('span', '', part.slice(i)));
     }
   }
 
