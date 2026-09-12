@@ -69,9 +69,11 @@ def test_flow_greeting_asks_name(tmp_path):
 def test_service_buttons_shown(tmp_path):
     engine = make_engine(tmp_path)
     s = Session("s2", "ar")
-    engine.handle(s, "")  # greeting
-    reply = engine.handle(s, "اسمي محمد")
+    engine.handle(s, "")  # greeting → ask_name
+    engine.handle(s, "اسمي محمد")  # ask_name → ask_contact
+    reply = engine.handle(s, "email@example.com")  # ask_contact → ask_service
     assert s.name == "محمد"
+    assert s.state == "ask_service"
     assert reply.quick_replies, "expected service buttons"
     labels = " ".join(reply.quick_replies)
     assert "فيديو" in labels and "هوية" in labels
@@ -80,29 +82,31 @@ def test_service_buttons_shown(tmp_path):
 def test_service_detail_from_rag(tmp_path):
     engine = make_engine(tmp_path)
     s = Session("s3", "ar")
-    engine.handle(s, "")
-    engine.handle(s, "اسمي سارة")
+    engine.handle(s, "")  # greeting
+    engine.handle(s, "اسمي سارة")  # ask_name → ask_contact
+    engine.handle(s, "01012345678")  # ask_contact → ask_service
     reply = engine.handle(s, "فيديو يوتيوب")
     assert s.state == "service_detail"
     assert s.service == "video"
     assert "يوتيوب" in " ".join(reply.messages)
-    assert reply.whatsapp is None
+    assert reply.whatsapp is not None
 
 
 def test_whatsapp_payload_contains_name_and_service(tmp_path):
     from urllib.parse import unquote
     engine = make_engine(tmp_path)
     s = Session("s4", "ar")
-    engine.handle(s, "")
-    engine.handle(s, "أنا خالد")
-    engine.handle(s, "بانرات")
-    reply = engine.handle(s, "واتساب")
+    engine.handle(s, "")  # greeting
+    engine.handle(s, "أنا خالد")  # ask_name → ask_contact
+    engine.handle(s, "email@example.com")  # ask_contact → ask_service
+    engine.handle(s, "بانرات")  # service_detail
+    reply = engine.handle(s, "واتساب")  # offer_whatsapp
     assert reply.whatsapp is not None
     link = reply.whatsapp["link"]
     assert "201553851517" in link
     decoded = unquote(link)
-    assert "خالد" in decoded  # visitor name
-    assert "بانر" in decoded  # service label
+    assert "خالد" in decoded
+    assert "بانر" in decoded
 
 
 def test_guard_refuses_offtopic_no_llm(tmp_path):
@@ -110,8 +114,9 @@ def test_guard_refuses_offtopic_no_llm(tmp_path):
     engine = make_engine(tmp_path, tracking=lambda *a, **k: calls.append(a))
     s = Session("s5", "ar")
     engine.handle(s, "")
-    engine.handle(s, "اسمي علي")
-    engine.handle(s, "فيديو")
+    engine.handle(s, "اسمي علي")  # ask_name → ask_contact
+    engine.handle(s, "01099988877")  # ask_contact → ask_service
+    engine.handle(s, "فيديو")  # service_detail
     reply = engine.handle(s, "اكتب لي قصيدة")
     assert calls == [], f"LLM should NOT be called for off-topic, got {calls}"
     assert "واتساب" in " ".join(reply.messages)
@@ -127,9 +132,10 @@ def test_freetext_question_calls_llm(tmp_path):
     engine = make_engine(tmp_path, tracking=fake_llm)
     s = Session("s6", "ar")
     engine.handle(s, "")
-    engine.handle(s, "اسمي نور")
-    engine.handle(s, "فيديو")
-    reply = engine.handle(s, "هل تغطي خدمة الفيديو كتابة السيناريو؟")
+    engine.handle(s, "اسمي نور")  # ask_name → ask_contact
+    engine.handle(s, "email@example.com")  # ask_contact → ask_service
+    engine.handle(s, "فيديو")  # service_detail
+    reply = engine.handle(s, "هل لديكم عينات أعمال يمكنني مراجعتها؟")
     assert calls, "LLM should be called for in-scope question"
     assert "السيناريو" in " ".join(reply.messages)
 
@@ -138,8 +144,9 @@ def test_lead_captured_when_contact_in_message(tmp_path):
     engine = make_engine(tmp_path)
     s = Session("s7", "ar")
     engine.handle(s, "")
-    engine.handle(s, "اسمي عمر im.official@site.com")
-    engine.handle(s, "مواقع")
+    engine.handle(s, "اسمي عمر im.official@site.com")  # ask_name → ask_contact
+    engine.handle(s, "مواقع")  # ask_contact → ask_service (quick_replies, no lead yet)
+    engine.handle(s, "مواقع")  # ask_service → _enter_service → saves lead
     assert os.path.exists(engine.leads_path)
     lines = open(engine.leads_path, encoding="utf-8").read().splitlines()
     parsed = json.loads(lines[-1])

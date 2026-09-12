@@ -56,7 +56,9 @@ def test_chat_returns_messages_and_state(client):
     assert data["state"] == "ask_name"
     assert len(data["messages"]) > 0
     assert isinstance(data["quick_replies"], list)
-    assert data["whatsapp"] is None
+    # WhatsApp handoff is always attached so the green button is always visible.
+    assert data["whatsapp"] is not None
+    assert "wa.me" in data["whatsapp"]["link"]
 
 
 def test_session_turn_cap_and_reset(client):

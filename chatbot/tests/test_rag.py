@@ -75,3 +75,37 @@ def test_load_knowledge_base_counts_chunks():
         pytest.skip("Real KB not found")
     chunks = load_knowledge_base(kb_dir)
     assert len(chunks) >= 10, f"Expected >=10 chunks, got {len(chunks)}"
+
+
+def test_load_plain_markdown_without_lang_prefix(tmp_path):
+    """Plain bilingual markdown (no ar:/en: lines) must still produce chunks.
+
+    Regression: services.md used headings + tables only, which the old loader
+    silently dropped, leaving the bot without package/pricing knowledge.
+    """
+    services = tmp_path / "services.md"
+    services.write_text(
+        "## الخدمات | Services\n"
+        "\n"
+        "### 8. تصميم وتطوير الشات بوت | Chatbot Design & Development\n"
+        "**باقات:**\n"
+        "- الأساسية: شات بوت — $150\n"
+        "- المتميزة: شات بوت ذكي بذكاء اصطناعي — $700\n",
+        encoding="utf-8",
+    )
+    persist = str(tmp_path / "chroma_db")
+    chunks = load_knowledge_base(str(tmp_path))
+    assert any("شات" in c.text for c in chunks), "Chatbot section must be chunked"
+    collection = build_index(chunks, persist)
+    results = retrieve(collection, "شات بوت")
+    assert any("شات" in r for r in results), f"Expected chatbot chunk, got: {results}"
+
+
+def test_real_kb_has_chatbot_service():
+    """The real knowledge base must include the chatbot service coverage."""
+    kb_dir = os.path.join(os.path.dirname(__file__), "..", "knowledge")
+    chunks = load_knowledge_base(kb_dir)
+    assert len(chunks) >= 10
+    assert any("شات" in c.text or "Chatbot" in c.text for c in chunks), (
+        "Chatbot service info missing from knowledge base"
+    )

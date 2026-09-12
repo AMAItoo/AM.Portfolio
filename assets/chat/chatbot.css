@@ -104,6 +104,19 @@
   color: #fff;
   border-bottom-right-radius: 4px;
 }
+.pf-inline-link {
+  color: var(--accent, #0E7C5A);
+  font-weight: 700;
+  text-decoration: underline;
+  word-break: break-all;
+}
+.pf-msg code {
+  background: rgba(14, 124, 90, .10);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-family: inherit;
+  white-space: nowrap;
+}
 [dir="rtl"] .pf-msg.bot { border-bottom-left-radius: 14px; border-bottom-right-radius: 4px; }
 [dir="rtl"] .pf-msg.user { border-bottom-right-radius: 14px; border-bottom-left-radius: 4px; }
 
@@ -175,15 +188,17 @@
 }
 .pf-chat-input input:focus { outline: none; border-color: var(--accent, #0E7C5A); }
 .pf-chat-input button {
-  background: var(--ink, #12231B);
-  color: var(--lime, #A7C957);
+  background: var(--accent, #0E7C5A);
+  color: #fff;
   border: 0;
   border-radius: 50%;
   width: 40px; height: 40px;
   cursor: pointer;
   display: grid; place-items: center;
+  transition: transform .15s, background .15s;
 }
-.pf-chat-input button svg { width: 18px; height: 18px; }
+.pf-chat-input button:hover { background: var(--ink, #12231B); transform: scale(1.05); }
+.pf-chat-input button svg { width: 18px; height: 18px; fill: #fff; }
 
 /* Under 420px: full-width bottom sheet */
 @media (max-width: 420px) {

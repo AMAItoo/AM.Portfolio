@@ -30,6 +30,8 @@ SERVICES = {
             "ar_short": "SEO وأداء", "en_short": "SEO & Performance"},
     "research": {"ar": "الأبحاث والبيانات", "en": "Research & Data",
                  "ar_short": "أبحاث وبيانات", "en_short": "Research & Data"},
+    "chatbot": {"ar": "تصميم وتطوير الشات بوت", "en": "Chatbot Design & Development",
+                "ar_short": "شات بوت ذكي", "en_short": "AI Chatbot"},
 }
 
 DEMO_LINKS = {
@@ -40,6 +42,7 @@ DEMO_LINKS = {
     "seo": "projects/youtube-video-production.html",
     "research": "projects/analytics-dashboard.html",
     "content": "projects/content-writing.html",
+    "chatbot": "https://mazag00-portfolio-chatbot.hf.space/",
 }
 
 # --- Language & contact detection -------------------------------------------
@@ -100,6 +103,7 @@ def match_service(text: str) -> str | None:
         "video": ("video", "youtube", "editing", "motion", "فيديو", "يوتيوب"),
         "seo": ("seo", "search engine", "performance", "optimization", "سرعة", "تهيئة"),
         "research": ("research", "data", "analysis", "بانر"),
+        "chatbot": ("chatbot", "chat bot", "chat-bot", "شات", "شات بوت", "بوت", "bot", "assistant"),
     }
 
     for key, s in SERVICES.items():
@@ -197,8 +201,8 @@ class Engine:
         session.state = "ask_name"
         return Reply(messages=[self._tr(
             session,
-            "أهلًا مرحبًا! 👋 أنا مساعد أحمد. أجيبك عن الخدمات والمشاريع بسرعة. ما اسمك؟",
-            "Hi! 👋 I'm Ahmed's assistant. I can answer questions about services and projects fast. What's your name?",
+            "أهلاً وسهلاً! 👋 ممكن أتعرّف عليك؟\n\n`1) اكتب اسمك`\nبعدها سأطلب منك الإيميل أو رقم الهاتف حتى نتابع الشات معاً.",
+            "Welcome! 👋 May I get to know you?\n\n`1) Tell me your name`\nThen I'll ask for your email or phone so we can continue the chat.",
         )])
 
     def _do_ask_name(self, session: Session, msg: str) -> Reply:
@@ -207,6 +211,19 @@ class Engine:
         if not name:
             name = "عميلنا العزيز" if session.lang == "ar" else "friend"
         session.name = name[:40]
+        session.state = "ask_contact"
+        return Reply(messages=[self._tr(
+            session,
+            f"تشرفت بمعرفتك يا {session.name}! 😊\n\n`2) للإيميل أو رقم الهاتف:`\nاكتب بريدك الإلكتروني أو رقم هاتفك حتى أتمكن من التواصل معك بخصوص مشروعك.",
+            f"Nice to meet you {session.name}! 😊\n\n`2) For email or phone:`\nShare your email or phone so I can reach you about your project.",
+        )])
+
+    def _do_ask_contact(self, session: Session, msg: str) -> Reply:
+        contact = extract_contact(msg)
+        if contact:
+            session.contact = contact
+        if not session.contact:
+            session.contact = "لم يُذكر"
         session.state = "ask_service"
         labels = self._tr(
             session,
@@ -215,8 +232,8 @@ class Engine:
         )
         return Reply(messages=[self._tr(
             session,
-            f"تشرفت بمعرفتك يا {session.name}! 😊 متاحة لك هذه الخدمات — اختر ما يناسبك:",
-            f"Nice to meet you {session.name}! 😊 Here's what I can deliver — pick the one that fits:",
+            f"تم التسجيل ✅ متاحة لك هذه الخدمات — اختر ما يناسبك:",
+            f"Got it ✅ Here's what I can deliver — pick the one that fits:",
         )], quick_replies=labels)
 
     def _do_ask_service(self, session: Session, msg: str) -> Reply:
@@ -282,6 +299,20 @@ class Engine:
             "ابدأ", "start", "الى واتساب", "هاتف", "رقم", "phone",
         ))
 
+    # --- whatsapp helper -----------------------------------------------------
+    def _ensure_whatsapp(self, reply: Reply, session: Session) -> None:
+        """Attach a WhatsApp link to any reply that lacks one."""
+        if reply.whatsapp:
+            return
+        name = session.name or ""
+        service = SERVICES[session.service]["ar"] if (session.service and session.lang == "ar") else (
+            SERVICES[session.service]["en"] if session.service else "")
+        if session.lang == "ar":
+            text = f"مرحبًا {name}، أنا مهتم بالخدمة: {service}. هل يمكننا التواصل؟" if service else f"مرحبًا {name}، أود الاستفسار."
+        else:
+            text = f"Hi {name}, I'm interested in: {service}. Can we talk?" if service else f"Hi {name}, I'd like to ask."
+        reply.whatsapp = {"link": f"https://wa.me/{WHATSAPP}?text={quote(text)}", "number": WHATSAPP}
+
     # --- main entry ----------------------------------------------------------
     def handle(self, session: Session, user_msg: str, buttons=None) -> Reply:
         msg = (user_msg or "").strip()
@@ -291,12 +322,17 @@ class Engine:
         self._record_contact(session, msg)
 
         if session.state == "greet":
-            return self._do_greet(session)
-        if session.state == "ask_name":
-            return self._do_ask_name(session, msg)
-        if session.state == "ask_service":
-            return self._do_ask_service(session, msg)
-        if session.state == "service_detail":
-            return self._do_service_detail(session, msg)
-        # offer_whatsapp / fallback: keep offering handoff
-        return self._offer_whatsapp(session)
+            reply = self._do_greet(session)
+        elif session.state == "ask_name":
+            reply = self._do_ask_name(session, msg)
+        elif session.state == "ask_contact":
+            reply = self._do_ask_contact(session, msg)
+        elif session.state == "ask_service":
+            reply = self._do_ask_service(session, msg)
+        elif session.state == "service_detail":
+            reply = self._do_service_detail(session, msg)
+        else:
+            reply = self._offer_whatsapp(session)
+
+        self._ensure_whatsapp(reply, session)
+        return reply

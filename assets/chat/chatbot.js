@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var DEFAULTS = { apiUrl: '', whatsapp: '201553851517', lang: 'ar' };
+  var DEFAULTS = { apiUrl: '', whatsapp: '201553851517', lang: 'ar', baseUrl: '' };
   var config = {};
   var sessionId = null;
   var els = {};
@@ -19,6 +19,58 @@
     if (cls) node.className = cls;
     if (text !== undefined) node.textContent = text; // XSS-safe
     return node;
+  }
+
+  /* Resolve relative project links against the site's base path so they
+     actually open. Absolute URLs (http/https) pass through untouched. */
+  function resolveLink(href) {
+    if (/^https?:\/\//i.test(href)) return href;
+    var base = config.baseUrl || window.location.origin + window.location.pathname;
+    base = base.replace(/[?#].*$/, '');
+    if (base.slice(-1) !== '/') base += '/';
+    return base + href.replace(/^\.?\//, '');
+  }
+
+  /* Render a bot message, converting [label](url) markdown links into
+     clickable <a> anchors and `code` into styled spans. Plain text nodes
+     keep everything XSS-safe. */
+  function renderMessage(text) {
+    var holder = el('div', 'pf-msg bot');
+    if (!text) return holder;
+    var linkRe = /\[([^\]]+)\]\((https?:\/\/[^\s)]+|[^)\s]+)\)/g;
+    var codeRe = /`([^`]+)`/g;
+    var cursor = 0;
+    var m;
+    while ((m = linkRe.exec(text)) !== null) {
+      emit(text.slice(cursor, m.index), false);
+      var a = document.createElement('a');
+      a.className = 'pf-inline-link';
+      a.textContent = m[1];
+      a.href = resolveLink(m[2]);
+      a.target = (m[2].indexOf('http') === 0) ? '_blank' : '_self';
+      a.rel = 'noopener noreferrer';
+      holder.appendChild(a);
+      cursor = m.index + m[0].length;
+    }
+    emit(text.slice(cursor), true);
+    return holder;
+
+    function emit(part, final) {
+      if (!part) return;
+      codeRe.lastIndex = 0;
+      var i = 0;
+      var cm;
+      while ((cm = codeRe.exec(part)) !== null) {
+        if (cm.index > i) holder.appendChild(el('span', '', part.slice(i, cm.index)));
+        holder.appendChild(el('code', '', cm[1]));
+        i = cm.index + cm[0].length;
+      }
+      if (final && i === 0) {
+        holder.appendChild(el('span', '', part));
+      } else if (i < part.length) {
+        holder.appendChild(el('span', '', part.slice(i)));
+      }
+    }
   }
 
   function isArabic(text) {
@@ -158,7 +210,7 @@ if (open && els.body.children.length === 0) {
 
   function render(reply) {
     (reply.messages || []).forEach(function (m) {
-      els.body.appendChild(el('div', 'pf-msg bot', m));
+      els.body.appendChild(renderMessage(m));
     });
     if (reply.quick_replies && reply.quick_replies.length) {
       var box = el('div', 'pf-quick');

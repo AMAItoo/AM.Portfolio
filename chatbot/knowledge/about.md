@@ -24,5 +24,5 @@ en: 40+ years experience · 100% delivered on the client's brief · 5.0 quality-
 
 ## التواصل | Contact
 
-ar: البريد الإلكتروني: cd3alaa@yahoo.com — واتساب: +201553851517 — الموقع: amaitoo.github.io/AM.Portfolio
-en: Email: cd3alaa@yahoo.com — WhatsApp: +201553851517 — Website: amaitoo.github.io/AM.Portfolio
+ar: البريد الإلكتروني: cd3alaa@yahoo.com — واتساب: https://wa.me/201553851517?text=مرحبا%2C_وجدت_بورتفوليو_أحمد_وأود_الاستفسار — الموقع: https://amaitoo.github.io/AM.Portfolio
+en: Email: cd3alaa@yahoo.com — WhatsApp: https://wa.me/201553851517?text=Hi%2C_I_found_Ahmed%27s_portfolio_and_I%27d_like_to_ask — Website: https://amaitoo.github.io/AM.Portfolio

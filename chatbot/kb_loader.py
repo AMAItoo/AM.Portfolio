@@ -1,4 +1,15 @@
-"""Load and chunk bilingual markdown knowledge base files."""
+"""Load and chunk bilingual markdown knowledge base files.
+
+Two content styles are supported:
+
+1. `ar:` / `en:` prefixed lines (about.md, projects.md, faq.md) — extracted
+   and merged per heading.
+2. Plain bilingual markdown (services.md) — the whole body of a heading is
+   kept as the chunk, so pricing tables, packages and prose all go to RAG.
+
+Sections split on both `##` and `###` headings so each service stays a
+self-contained chunk.
+"""
 import os
 import hashlib
 import re
@@ -13,8 +24,27 @@ class Chunk:
     chunk_id: str  # content hash
 
 
-HEADING_RE = re.compile(r"^## (.+)$", re.MULTILINE)
+HEADING_RE = re.compile(r"^(#{2,3})\s+(.+)$", re.MULTILINE)
 LANG_LINE_RE = re.compile(r"^(ar|en):\s*(.+)$", re.IGNORECASE | re.MULTILINE)
+
+
+def _split_sections(content: str) -> list[tuple[str, str]]:
+    """Split content by `## ` / `### ` headings into [(heading, body)]."""
+    parts = re.split(r"(?=^#{2,3} )", content, flags=re.MULTILINE)
+    sections: list[tuple[str, str]] = []
+    for part in parts:
+        part = part.strip()
+        if not part:
+            continue
+        m = HEADING_RE.match(part)
+        if m:
+            heading = m.group(2).strip()
+            body = part[m.end():].strip()
+        else:
+            heading = ""  # preamble before the first heading
+            body = part
+        sections.append((heading, body))
+    return sections
 
 
 def _lang_lines(text: str) -> tuple[str, str]:
@@ -35,10 +65,10 @@ def _make_chunk_id(text: str, source: str) -> str:
 
 
 def load_knowledge_base(kb_dir: str) -> list[Chunk]:
-    """Parse all .md files in kb_dir into chunks (split by ## headings).
+    """Parse all .md files in kb_dir into chunks.
 
-    Each chunk gets both ar and en content merged, plus source/heading metadata.
-    Single pass per file: no duplicate chunks.
+    Each chunk is either the merged ar/en extraction (prefixed style) or the
+    full section body (plain style). Single pass per file, deduplicated.
     """
     chunks: list[Chunk] = []
     seen_ids: set[str] = set()
@@ -50,23 +80,12 @@ def load_knowledge_base(kb_dir: str) -> list[Chunk]:
         with open(fpath, "r", encoding="utf-8") as f:
             content = f.read()
 
-        parts = re.split(r"(?=^## )", content, flags=re.MULTILINE)
-
-        for part in parts:
-            part = part.strip()
-            if not part:
-                continue
-
-            heading_match = HEADING_RE.match(part)
-            if heading_match:
-                heading = heading_match.group(1)
-                body = part[heading_match.end():].strip()
-            else:
-                heading = ""  # preamble (content before first ##)
-                body = part
-
+        for heading, body in _split_sections(content):
             ar_text, en_text = _lang_lines(body)
             merged = f"{ar_text}\n{en_text}".strip()
+            if not merged:
+                # Plain bilingual markdown: keep the whole section body.
+                merged = body
             if not merged:
                 continue
 
@@ -75,8 +94,11 @@ def load_knowledge_base(kb_dir: str) -> list[Chunk]:
                 continue
 
             seen_ids.add(chunk_id)
+            # Prepend the section heading so queries match on the service name
+            # even when the body only lists packages and prices.
+            header = f"{heading}\n" if heading else ""
             chunks.append(Chunk(
-                text=merged,
+                text=header + merged,
                 source=fname,
                 heading=heading,
                 chunk_id=chunk_id,
