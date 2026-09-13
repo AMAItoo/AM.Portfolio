@@ -12,8 +12,11 @@ container restarts on ZeroGPU. Enable it by setting:
 """
 import json
 import os
+import smtplib
+import ssl
 import threading
 import time
+from email.message import EmailMessage
 
 try:
     from huggingface_hub import HfApi
@@ -22,12 +25,72 @@ except Exception:                       # pragma: no cover - fallback offline
     _HF_OK = False
 
 
-def append_lead(lead: dict, path: str = "data/leads.jsonl") -> None:
+# --- Email alert (optional, via SMTP env vars) --------------------------------
+# Enable by setting:  ALERT_SMTP_HOST, ALERT_SMTP_PORT, ALERT_EMAIL_FROM,
+#   ALERT_EMAIL_TO, ALERT_SMTP_USER, ALERT_SMTP_PASSWORD   (Gmail works directly).
+def _email_config() -> dict:
+    return {
+        "host": os.environ.get("ALERT_SMTP_HOST", "").strip(),
+        "port": int(os.environ.get("ALERT_SMTP_PORT", "587")),
+        "from_": os.environ.get("ALERT_EMAIL_FROM", "").strip(),
+        "to": os.environ.get("ALERT_EMAIL_TO", "").strip(),
+        "user": os.environ.get("ALERT_SMTP_USER", "").strip(),
+        "password": os.environ.get("ALERT_SMTP_PASSWORD", "").strip(),
+    }
+
+
+def _send_email(subject: str, body: str) -> None:
+    """Best-effort SMTP send (STARTTLS). Never raises."""
+    cfg = _email_config()
+    if not (cfg["host"] and cfg["to"] and cfg["from_"] and cfg["user"] and cfg["password"]):
+        return
+    try:
+        msg = EmailMessage()
+        msg["Subject"] = subject
+        msg["From"] = cfg["from_"]
+        msg["To"] = cfg["to"]
+        msg.set_content(body)
+        ctx = ssl.create_default_context()
+        with smtplib.SMTP(cfg["host"], cfg["port"], timeout=15) as server:
+            server.ehlo()
+            server.starttls(context=ctx)
+            server.login(cfg["user"], cfg["password"])
+            server.send_message(msg)
+    except Exception:
+        pass
+
+
+def notify_new_lead(lead: dict) -> None:
+    """Fire an email alert when a visitor registers (best-effort)."""
+    name = lead.get("name", "")
+    service = lead.get("service", "")
+    contact = lead.get("contact", "")
+    lang = lead.get("lang", "")
+    lang_label = "العربية" if lang == "ar" else "English"
+    subject = f"💬 Lead جديد: {name or 'زائر'}"
+    body = (
+        f"تم تسجيل زائر جديد عبر الشات بوت 🎉\n\n"
+        f"• الاسم: {name}\n"
+        f"• الخدمة المطلوبة: {service}\n"
+        f"• طريقة التواصل: {contact}\n"
+        f"• اللغة: {lang_label}\n"
+        f"• الوقت: {lead.get('ts', '')}\n"
+        f"• الجلسة: {lead.get('session_id', '')}\n"
+    )
+    _send_email(subject, body)
+
+
+def append_lead(lead: dict, path: str = "data/leads.jsonl", notify: bool = True) -> None:
     """Append a single lead as a JSON line. Creates parent dirs as needed."""
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     line = json.dumps(lead, ensure_ascii=False)
     with open(path, "a", encoding="utf-8") as f:
         f.write(line + "\n")
+    if notify:
+        try:
+            notify_new_lead(lead)
+        except Exception:
+            pass
 
 
 def new_lead(session_id: str, name: str, service: str, contact: str,

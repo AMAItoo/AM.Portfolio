@@ -69,9 +69,6 @@
         i = cm.index + cm[0].length;
       }
       if (i < part.length) emitBare(part.slice(i));
-      if (final && i === 0 && !/[\w]/.test(part)) {
-        holder.appendChild(el('span', '', part));
-      }
     }
 
     function emitBare(part) {
