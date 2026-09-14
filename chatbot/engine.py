@@ -8,7 +8,7 @@ import re
 from dataclasses import dataclass, field
 from urllib.parse import quote
 
-from chatbot.leads import append_lead, new_lead
+from chatbot.leads import append_lead, new_lead, notify_new_lead
 from chatbot import rag
 from chatbot import llm as llm_api
 
@@ -144,6 +144,7 @@ class Session:
     name: str | None = None
     service: str | None = None
     contact: str | None = None
+    notified: bool = False  # email alert already fired for this session
 
 
 class Engine:
@@ -171,7 +172,8 @@ class Engine:
             contact=session.contact or "",
             lang=session.lang,
             last_state=session.state,
-        ), self.leads_path)
+        ), self.leads_path, notify=not session.notified)
+        session.notified = True
 
     def _service_detail_text(self, key: str, lang: str) -> str:
         s = SERVICES[key]
@@ -224,6 +226,17 @@ class Engine:
             session.contact = contact
         if not session.contact:
             session.contact = "لم يُذكر"
+        # Visitor just shared contact details: alert immediately (fire-and-forget,
+        # never blocks the reply). Later saves stay silent (single email/session).
+        notify_new_lead(new_lead(
+            session_id=session.session_id,
+            name=session.name or "",
+            service="",
+            contact=session.contact or "",
+            lang=session.lang,
+            last_state="ask_contact",
+        ))
+        session.notified = True
         session.state = "ask_service"
         labels = self._tr(
             session,

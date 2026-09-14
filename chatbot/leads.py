@@ -40,29 +40,36 @@ def _email_config() -> dict:
     }
 
 
-def _send_email(subject: str, body: str) -> None:
-    """Best-effort SMTP send (STARTTLS). Never raises."""
+def _smtp_configured(cfg: dict) -> bool:
+    return bool(cfg["host"] and cfg["to"] and cfg["from_"] and cfg["user"] and cfg["password"])
+
+
+def _send_email(subject: str, body: str) -> bool:
+    """Send via SMTP (STARTTLS). Returns True on success; raises on failure."""
     cfg = _email_config()
-    if not (cfg["host"] and cfg["to"] and cfg["from_"] and cfg["user"] and cfg["password"]):
-        return
-    try:
-        msg = EmailMessage()
-        msg["Subject"] = subject
-        msg["From"] = f"{cfg['site']} <{cfg['from_']}>"
-        msg["To"] = cfg["to"]
-        msg.set_content(body)
-        ctx = ssl.create_default_context()
-        with smtplib.SMTP(cfg["host"], cfg["port"], timeout=15) as server:
-            server.ehlo()
-            server.starttls(context=ctx)
-            server.login(cfg["user"], cfg["password"])
-            server.send_message(msg)
-    except Exception:
-        pass
+    if not _smtp_configured(cfg):
+        return False
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = f"{cfg['site']} <{cfg['from_']}>"
+    msg["To"] = cfg["to"]
+    msg.set_content(body)
+    ctx = ssl.create_default_context()
+    with smtplib.SMTP(cfg["host"], cfg["port"], timeout=15) as server:
+        server.ehlo()
+        server.starttls(context=ctx)
+        server.login(cfg["user"], cfg["password"])
+        server.send_message(msg)
+    return True
 
 
 def notify_new_lead(lead: dict) -> None:
-    """Fire an email alert when a visitor registers (best-effort)."""
+    """Fire-and-forget email alert in a daemon thread; logs the outcome.
+
+    Never blocks the caller and never raises: the network send happens off
+    the request path, and failures are printed to stdout (visible in Space
+    logs) instead of breaking the chat reply. No secrets are ever logged.
+    """
     cfg = _email_config()
     site = cfg["site"]
     name = lead.get("name", "")
@@ -93,7 +100,21 @@ def notify_new_lead(lead: dict) -> None:
             f"• Time: {lead.get('ts', '')}\n"
             f"• Session: {lead.get('session_id', '')}\n"
         )
-    _send_email(subject, body)
+    if not _smtp_configured(_email_config()):
+        print("[lead-alert] skipped (SMTP not configured)")
+        return
+
+    def _run() -> None:
+        try:
+            ok = _send_email(subject, body)
+        except Exception as e:  # network/auth/timeout — never break the reply
+            print(f"[lead-alert] FAILED session={lead.get('session_id', '')} "
+                  f"err={type(e).__name__}: {e}")
+            return
+        print(f"[lead-alert] {'sent' if ok else 'FAILED'} "
+              f"session={lead.get('session_id', '')}")
+
+    threading.Thread(target=_run, daemon=True).start()
 
 
 def append_lead(lead: dict, path: str = "data/leads.jsonl", notify: bool = True) -> None:
