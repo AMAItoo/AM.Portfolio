@@ -30,12 +30,13 @@ except Exception:                       # pragma: no cover - fallback offline
 #   ALERT_EMAIL_TO, ALERT_SMTP_USER, ALERT_SMTP_PASSWORD   (Gmail works directly).
 def _email_config() -> dict:
     return {
-        "host": os.environ.get("ALERT_SMTP_HOST", "").strip(),
+        "host": os.environ.get("ALERT_SMTP_HOST", "smtp.gmail.com").strip(),
         "port": int(os.environ.get("ALERT_SMTP_PORT", "587")),
         "from_": os.environ.get("ALERT_EMAIL_FROM", "").strip(),
         "to": os.environ.get("ALERT_EMAIL_TO", "").strip(),
         "user": os.environ.get("ALERT_SMTP_USER", "").strip(),
         "password": os.environ.get("ALERT_SMTP_PASSWORD", "").strip(),
+        "site": os.environ.get("ALERT_SITE_NAME", "AM.Portfolio").strip(),
     }
 
 
@@ -47,7 +48,7 @@ def _send_email(subject: str, body: str) -> None:
     try:
         msg = EmailMessage()
         msg["Subject"] = subject
-        msg["From"] = cfg["from_"]
+        msg["From"] = f"{cfg['site']} <{cfg['from_']}>"
         msg["To"] = cfg["to"]
         msg.set_content(body)
         ctx = ssl.create_default_context()
@@ -62,21 +63,36 @@ def _send_email(subject: str, body: str) -> None:
 
 def notify_new_lead(lead: dict) -> None:
     """Fire an email alert when a visitor registers (best-effort)."""
+    cfg = _email_config()
+    site = cfg["site"]
     name = lead.get("name", "")
     service = lead.get("service", "")
     contact = lead.get("contact", "")
     lang = lead.get("lang", "")
-    lang_label = "العربية" if lang == "ar" else "English"
-    subject = f"💬 Lead جديد: {name or 'زائر'}"
-    body = (
-        f"تم تسجيل زائر جديد عبر الشات بوت 🎉\n\n"
-        f"• الاسم: {name}\n"
-        f"• الخدمة المطلوبة: {service}\n"
-        f"• طريقة التواصل: {contact}\n"
-        f"• اللغة: {lang_label}\n"
-        f"• الوقت: {lead.get('ts', '')}\n"
-        f"• الجلسة: {lead.get('session_id', '')}\n"
-    )
+    if lang == "ar":
+        subject = f"🔔 {site} — مشترك جديد: {name or 'زائر'}"
+        lang_label = "العربية"
+        body = (
+            f"📣 مشترك جديد عبر الشات بوت في {site}\n\n"
+            f"• الاسم: {name}\n"
+            f"• الخدمة المطلوبة: {service}\n"
+            f"• طريقة التواصل: {contact}\n"
+            f"• اللغة: {lang_label}\n"
+            f"• الوقت: {lead.get('ts', '')}\n"
+            f"• الجلسة: {lead.get('session_id', '')}\n"
+        )
+    else:
+        subject = f"🔔 {site} — New subscriber: {name or 'Visitor'}"
+        lang_label = "English"
+        body = (
+            f"📣 A new visitor subscribed via the chat bot on {site}\n\n"
+            f"• Name: {name}\n"
+            f"• Service requested: {service}\n"
+            f"• Contact method: {contact}\n"
+            f"• Language: {lang_label}\n"
+            f"• Time: {lead.get('ts', '')}\n"
+            f"• Session: {lead.get('session_id', '')}\n"
+        )
     _send_email(subject, body)
 
 
