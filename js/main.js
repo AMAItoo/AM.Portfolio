@@ -44,44 +44,33 @@
     if (e.target.closest('.protect')) e.preventDefault();
   });
 
-  // Contact form -> FormSubmit (AJAX, no backend needed)
+  // Contact form -> mailto: (client-side, no backend/domain verification needed)
   var form = document.querySelector('#contact-form');
   if (form) {
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var btn = form.querySelector('button[type="submit"]');
       var status = form.querySelector('.form-status');
-      var data = new FormData(form);
-      data.set('_subject', '[Portfolio] New inquiry');
-      data.set('_captcha', 'false');
-      data.set('_template', 'table');
+      var name = form.querySelector('[name="name"]').value.trim();
+      var email = form.querySelector('[name="email"]').value.trim();
+      var message = form.querySelector('[name="message"]').value.trim();
+      var subject = '[Portfolio] New inquiry from ' + (name || 'Visitor');
+      var body = 'Name: ' + name + '%0A'
+               + 'Email: ' + email + '%0A'
+               + 'Message:%0A' + message;
+      var mailtoUrl = 'mailto:cd3alaa@yahoo.com?subject='
+                    + encodeURIComponent(subject)
+                    + '&body=' + encodeURIComponent(body);
       btn.disabled = true;
-      btn.textContent = isArabic ? 'جاري الإرسال…' : 'Sending…';
+      btn.textContent = isArabic ? 'جاري...' : 'Opening mail…';
       status.className = 'form-status sending';
-      status.textContent = isArabic ? 'جاري إرسال رسالتك…' : 'Sending your message…';
-      fetch(form.action, { method: 'POST', body: data, headers: { 'Accept': 'application/json' } })
-        .then(function (res) { return res.json(); })
-        .then(function (json) {
-          if (json.success === 'true' || json.success === true) {
-            status.className = 'form-status ok';
-            status.textContent = isArabic ? 'شكراً! تم إرسال رسالتك — سأرد عليك قريباً.' : 'Thank you! Your message was sent — I will reply soon.';
-            form.reset();
-          } else if (json.success === 'false') {
-            status.className = 'form-status err';
-            status.textContent = isArabic ? 'يحتاج تفعيل البريد — تحقق من صندوق الوارد.' : 'Email activation needed first — check your inbox for the confirmation link.';
-          } else {
-            status.className = 'form-status err';
-            status.textContent = isArabic ? 'تعذر الإرسال. حاول مرة أخرى أو أرسل رسالة واتساب.' : 'Could not send. Please try again or message me on WhatsApp.';
-          }
-        })
-        .catch(function () {
-          status.className = 'form-status err';
-          status.textContent = isArabic ? 'تعذر الإرسال. حاول مرة أخرى أو أرسل رسالة واتساب.' : 'Could not send. Please try again or message me on WhatsApp.';
-        })
-        .finally(function () {
-          btn.disabled = false;
-          btn.textContent = isArabic ? 'إرسال الاستفسار ←' : 'Send inquiry →';
-        });
+      status.textContent = isArabic ? 'جارٍ فتح عميل البريد…' : 'Opening your email client…';
+      window.location.href = mailtoUrl;
+      form.reset();
+      status.className = 'form-status ok';
+      status.textContent = isArabic ? 'شكراً! تم فتح بريدك — سيرسل رسالتك. سأرد عليك قريباً.' : 'Thank you! Your email client opened — send the message and I will reply soon.';
+      btn.disabled = false;
+      btn.textContent = isArabic ? 'إرسال الاستفسار ←' : 'Send inquiry →';
     });
   }
 
